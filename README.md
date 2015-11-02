@@ -93,7 +93,7 @@ module.exports = React.createClass({
 
 ## Screencasts
 
-![refresh](https://github.com/remobile/react-native-refresh-infinite-listview/master/screencasts/refresh.gif)
+![refresh](https://github.com/remobile/react-native-refresh-infinite-listview/blob/master/screencasts/refresh.gif)
 
 #### Props
 - `footerHeight:number`
