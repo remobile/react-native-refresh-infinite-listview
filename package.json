@@ -7,7 +7,7 @@
             "name": "YunJiang.Fang",
             "email": "42550564@qq.com"
         },
-        "license": "",
+        "license": "MIT",
         "keywords": [
             "remobile",
             "react-native",
@@ -20,10 +20,7 @@
             "infinite",
             "listview",
             "loadmore"
-            ],
-        "peerDependencies": {
-            "react-native": ">=0.14.0"
-        },
+        ],
         "homepage": "https://github.com/remobile/react-native-refresh-infinite-listview",
         "bugs": {
             "url": "https://github.com/remobile/react-native-refresh-infinite-listview/issues"
