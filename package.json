@@ -1,0 +1,32 @@
+{
+  "name": "react-native-refresh-infinite-listview",
+  "version": "1.0.0",
+  "description": "A awesome pull-down-refresh and pull-up-loadmore listview",
+  "main": "RefreshInfiniteListView.js",
+  "author": {
+    "name": "YunJiang.Fang",
+    "email": "42550564@qq.com"
+  },
+  "license": "",
+  "keywords": [
+    "remobile",
+    "react-native",
+    "react-component",
+    "react-native-component",
+    "mobile",
+    "ios",
+    "android",
+    "refresh",
+    "infinite",
+    "listview",
+    "loadmore"
+  ],
+  "homepage": "https://github.com/remobile/react-native-refresh-infinite-listview",
+  "bugs": {
+    "url": "https://github.com/remobile/react-native-refresh-infinite-listview/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/remobile/react-native-refresh-infinite-listview.git"
+  }
+}
