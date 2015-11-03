@@ -248,7 +248,6 @@ var RefreshInfiniteListView = React.createClass({
                 onResponderGrant={this.handleResponderGrant}
                 onResponderRelease={this.handleResponderRelease}
                 onScroll={this.handleScroll}
-                onLayout={this.handleLayout}
                 />
         )
     }

@@ -9,17 +9,17 @@
         },
         "license": "MIT",
         "keywords": [
-            "remobile",
             "react-native",
             "react-component",
             "react-native-component",
-            "mobile",
             "ios",
             "android",
             "refresh",
             "infinite",
             "listview",
-            "loadmore"
+            "loadmore",
+            "remobile",
+            "mobile"
         ],
         "homepage": "https://github.com/remobile/react-native-refresh-infinite-listview",
         "bugs": {
