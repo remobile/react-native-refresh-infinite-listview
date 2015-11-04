@@ -9,17 +9,19 @@ var {
     ListView,
     Dimensions,
     ActivityIndicatorIOS,
+    PropTypes,
 } = React;
 
 /*list status change graph
 *
-*STATUS_NONE->[STATUS_REFRESH_IDLE, STATUS_INFINITE_IDLE]
+*STATUS_NONE->[STATUS_REFRESH_IDLE, STATUS_INFINITE_IDLE, STATUS_INFINITE_LOADED_ALL]
 *STATUS_REFRESH_IDLE->[STATUS_NONE, STATUS_WILL_REFRESH]
 *STATUS_WILL_REFRESH->[STATUS_REFRESH_IDLE, STATUS_REFRESHING]
 *STATUS_REFRESHING->[STATUS_NONE]
 *STATUS_INFINITE_IDLE->[STATUS_NONE, STATUS_WILL_INFINITE]
 *STATUS_WILL_INFINITE->[STATUS_INFINITE_IDLE, STATUS_INFINITING]
 *STATUS_INFINITING->[STATUS_NONE]
+*STATUS_INFINITE_LOADED_ALL->[STATUS_NONE]
 *
 */
 var
@@ -29,19 +31,32 @@ STATUS_WILL_REFRESH = 2,
 STATUS_REFRESHING = 3,
 STATUS_INFINITE_IDLE = 4,
 STATUS_WILL_INFINITE = 5,
-STATUS_INFINITING = 6;
+STATUS_INFINITING = 6,
+STATUS_INFINITE_LOADED_ALL = 7;
 
 var DEFAULT_PULL_DISTANCE = 60;
 var DEFAULT_HF_HEIGHT = 50;
 
 var RefreshInfiniteListView = React.createClass({
+    propTypes: {
+        footerHeight : PropTypes.number,
+        pullDistance : PropTypes.number,
+        renderEmptyRow : PropTypes.func,
+        renderHeaderRefreshIdle : PropTypes.func,
+        renderHeaderWillRefresh : PropTypes.func,
+        renderHeaderRefreshing : PropTypes.func,
+        renderFooterInifiteIdle : PropTypes.func,
+        renderFooterWillInifite : PropTypes.func,
+        renderFooterInifiting : PropTypes.func,
+        renderFooterInifiteLoadedAll : PropTypes.func,
+    },
     getDefaultProps () {
         return {
             footerHeight: DEFAULT_HF_HEIGHT,
             pullDistance: DEFAULT_PULL_DISTANCE,
             renderEmptyRow: () => {
                 return (
-                    <View style={{height:Dimensions.get('window').height, justifyContent:'center',alignItems:'center'}}>
+                    <View style={{height:Dimensions.get('window').height*2/3, justifyContent:'center',alignItems:'center'}}>
                         <Text style={{fontSize:40, fontWeight:'800', color:'red'}}>
                             have no data
                         </Text>
@@ -117,6 +132,16 @@ var RefreshInfiniteListView = React.createClass({
                     </Text>
                 </View>
             )},
+            renderFooterInifiteLoadedAll: () => { return (
+                <View style={{height:DEFAULT_HF_HEIGHT, justifyContent:'center', alignItems:'center'}}>
+                    <Text style={styles.text}>
+                        have loaded all data
+                    </Text>
+                </View>
+            )},
+            loadedAllData: () => {
+                return false;
+            },
             onRefresh: () => {
                 console.log("onRefresh");
             },
@@ -140,30 +165,31 @@ var RefreshInfiniteListView = React.createClass({
     },
     renderHeader() {
         var status = this.state.status;
-        if (status===STATUS_REFRESH_IDLE) {
+        if (status === STATUS_REFRESH_IDLE) {
             return this.props.renderHeaderRefreshIdle();
         }
-        if (status===STATUS_WILL_REFRESH) {
+        if (status === STATUS_WILL_REFRESH) {
             return this.props.renderHeaderWillRefresh();
         }
-        if (status===STATUS_REFRESHING) {
+        if (status === STATUS_REFRESHING) {
             return this.props.renderHeaderRefreshing();
         }
         return null;
     },
     renderFooter() {
         var status = this.state.status;
-        if (status===STATUS_INFINITE_IDLE) {
-            this.footerIsRender = true;
+        this.footerIsRender = true;
+        if (status === STATUS_INFINITE_IDLE) {
             return this.props.renderFooterInifiteIdle();
         }
-        if (status===STATUS_WILL_INFINITE) {
-            this.footerIsRender = true;
+        if (status === STATUS_WILL_INFINITE) {
             return this.props.renderFooterWillInifite();
         }
-        if (status===STATUS_INFINITING) {
-            this.footerIsRender = true;
+        if (status === STATUS_INFINITING) {
             return this.props.renderFooterInifiting();
+        }
+        if (status === STATUS_INFINITE_LOADED_ALL) {
+            return this.props.renderFooterInifiteLoadedAll();
         }
         this.footerIsRender = false;
         return null;
@@ -180,9 +206,13 @@ var RefreshInfiniteListView = React.createClass({
         }
         y0 = nativeEvent.contentInset.top + nativeEvent.contentOffset.y +
         nativeEvent.layoutMeasurement.height-nativeEvent.contentSize.height;
-        if (y0 > 0) {
-            this.initialInfiniteOffset = (y0>0?y0:0);
-            this.setState({status:STATUS_INFINITE_IDLE});
+        if (y0 > 0 ) {
+            if (!this.props.loadedAllData()) {
+                this.initialInfiniteOffset = (y0>0?y0:0);
+                this.setState({status:STATUS_INFINITE_IDLE});
+            } else {
+                this.setState({status:STATUS_INFINITE_LOADED_ALL});
+            }
         }
     },
     hideHeader() {
@@ -203,6 +233,8 @@ var RefreshInfiniteListView = React.createClass({
         } else if (status === STATUS_WILL_INFINITE) {
             this.setState({status:STATUS_INFINITING});
             this.props.onInfinite();
+        } else if (status === STATUS_INFINITE_LOADED_ALL) {
+            this.setState({status:STATUS_NONE});
         }
     },
     handleScroll(event) {

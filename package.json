@@ -1,6 +1,6 @@
 {
     "name": "react-native-refresh-infinite-listview",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "description": "A awesome pull-down-refresh and pull-up-loadmore listview",
         "main": "RefreshInfiniteListView.js",
         "author": {
