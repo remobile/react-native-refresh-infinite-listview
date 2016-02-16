@@ -9,7 +9,7 @@ var {
 } = React;
 
 var TimerMixin = require('react-timer-mixin');
-var RefreshInfiniteListView = require('react-native-refresh-infinite-listview');
+var RefreshInfiniteListView = require('@remobile/react-native-refresh-infinite-listview');
 
 var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
 module.exports = React.createClass({

@@ -1,9 +1,9 @@
-# React Native RefreshableListView
+# React Native RefreshableListView (remobile)
 A awesome pull-down-refresh and pull-up-loadmore listview
 
 ## Installation
 ```sh
-npm install react-native-refresh-infinite-listview --save
+npm install @remobile/react-native-refresh-infinite-listview --save
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ var {
 } = React;
 
 var TimerMixin = require('react-timer-mixin');
-var RefreshInfiniteListView = require('react-native-refresh-infinite-listview');
+var RefreshInfiniteListView = require('@remobile/react-native-refresh-infinite-listview');
 
 var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
 module.exports = React.createClass({
