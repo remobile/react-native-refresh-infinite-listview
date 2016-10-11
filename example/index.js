@@ -1,12 +1,13 @@
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var ReactNative = require('react-native');
 var {
     View,
     Text,
     StyleSheet,
     ListView
-} = React;
+} = ReactNative;
 
 var TimerMixin = require('react-timer-mixin');
 var RefreshInfiniteListView = require('@remobile/react-native-refresh-infinite-listview');

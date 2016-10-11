@@ -1,6 +1,10 @@
 'use strict';
 
-var React = require('react-native');
+var React = require('react');
+var {
+    PropTypes
+} = React;
+var ReactNative = require('react-native');
 var {
     Image,
     View,
@@ -9,8 +13,7 @@ var {
     ListView,
     Dimensions,
     ActivityIndicatorIOS,
-    PropTypes,
-} = React;
+} = ReactNative;
 
 /*list status change graph
 *
