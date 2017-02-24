@@ -12,7 +12,9 @@ var {
     StyleSheet,
     ListView,
     Dimensions,
-    ActivityIndicatorIOS,
+    ActivityIndicator,
+    PanResponder,
+    Animated,
 } = ReactNative;
 
 /*list status change graph
@@ -40,7 +42,7 @@ STATUS_INFINITE_LOADED_ALL = 7;
 var DEFAULT_PULL_DISTANCE = 60;
 var DEFAULT_HF_HEIGHT = 50;
 
-var RefreshInfiniteListView = React.createClass({
+module.exports =  React.createClass({
     propTypes: {
         footerHeight : PropTypes.number,
         pullDistance : PropTypes.number,
@@ -67,7 +69,7 @@ var RefreshInfiniteListView = React.createClass({
                 )
             },
             renderHeaderRefreshIdle: () => {return (
-                <View style={{flex:1, height:DEFAULT_HF_HEIGHT, justifyContent:'center', alignItems:'center'}}>
+                <View style={{height:DEFAULT_HF_HEIGHT, justifyContent:'center', alignItems:'center'}}>
                     <Text style={styles.text}>
                         pull down refresh...
                     </Text>
@@ -96,7 +98,7 @@ var RefreshInfiniteListView = React.createClass({
                         refreshing...
                     </Text>
 
-                    <ActivityIndicatorIOS
+                    <ActivityIndicator
                         size='small'
                         animating={true}/>
                 </View>
@@ -127,7 +129,7 @@ var RefreshInfiniteListView = React.createClass({
             )},
             renderFooterInifiting: () => {return (
                 <View style={{height:DEFAULT_HF_HEIGHT, justifyContent:'center', alignItems:'center'}}>
-                    <ActivityIndicatorIOS
+                    <ActivityIndicator
                         size='small'
                         animating={true}/>
                     <Text style={styles.text}>
@@ -154,16 +156,22 @@ var RefreshInfiniteListView = React.createClass({
         };
     },
     getInitialState() {
+        this.contentHeight = 0;
+        this.height = 0;
+        this.scrollY = 0;
+        this.isCanScroll = false;
+        this.maxScrollY = 0;
         return {
             status: STATUS_NONE,
-            isLoadedAllData: false,
+            translateY: new Animated.Value(0),
+            isScrollEnable: false,
         }
     },
-    renderRow(text) {
+    renderRow(obj, sectionID, rowID) {
         if (this.dataSource) {
-            return this.props.renderEmptyRow(text);
+            return this.props.renderEmptyRow(obj);
         } else {
-            return this.props.renderRow(text);
+            return this.props.renderRow(obj);
         }
     },
     renderHeader() {
@@ -197,26 +205,17 @@ var RefreshInfiniteListView = React.createClass({
         this.footerIsRender = false;
         return null;
     },
-    handleResponderGrant(event) {
-        var nativeEvent = event.nativeEvent;
-        if (!nativeEvent.contentInset || this.state.status!==STATUS_NONE) {
-            return;
+    renderFooterInner() {
+        if (!this.isCanScroll) {
+            return this.renderFooter();
         }
-        var y0 = nativeEvent.contentInset.top + nativeEvent.contentOffset.y;
-        if (y0 < 0) {
-            this.setState({status:STATUS_REFRESH_IDLE});
-            return;
+        return null;
+    },
+    renderFooterOutter() {
+        if (this.isCanScroll) {
+            return this.renderFooter();
         }
-        y0 = nativeEvent.contentInset.top + nativeEvent.contentOffset.y +
-        nativeEvent.layoutMeasurement.height-nativeEvent.contentSize.height;
-        if (y0 > 0 ) {
-            if (!this.props.loadedAllData()) {
-                this.initialInfiniteOffset = (y0>0?y0:0);
-                this.setState({status:STATUS_INFINITE_IDLE});
-            } else {
-                this.setState({status:STATUS_INFINITE_LOADED_ALL});
-            }
-        }
+        return null;
     },
     hideHeader() {
         this.setState({status:STATUS_NONE});
@@ -224,8 +223,73 @@ var RefreshInfiniteListView = React.createClass({
     hideFooter() {
         this.setState({status:STATUS_NONE});
     },
-    handleResponderRelease(event) {
+    componentWillMount() {
+        this._panResponder = PanResponder.create({
+            onStartShouldSetPanResponder: ()=>!this.state.isScrollEnable,
+            onMoveShouldSetPanResponder: ()=>!this.state.isScrollEnable,
+            onPanResponderMove: this.handlePanResponderMove,
+            onPanResponderRelease: this.handlePanResponderEnd,
+            onPanResponderTerminate: this.handlePanResponderEnd,
+        });
+    },
+    onLayout(e) {
+        this.height = e.nativeEvent.layout.height;
+        this.isCanScroll = this.contentHeight > this.height;
+        this.maxScrollY = Math.floor(this.contentHeight - this.height);
+    },
+    onContentSizeChange(contentWidth, contentHeight) {
+        this.contentHeight = contentHeight;
+        this.isCanScroll = this.contentHeight > this.height;
+        this.maxScrollY = Math.floor(this.contentHeight - this.height);
+    },
+    handlePanResponderMove(e, gestureState) {
+        const offset = gestureState.dy;
+        const {status} = this.state;
+        if (this.scrollY === 0) {
+            if (offset > 0 && status === STATUS_NONE) {
+                this.setState({status:STATUS_REFRESH_IDLE});
+            } else if (offset < 0) {
+                if (this.isCanScroll) {
+                    this.refs.scrollView.scrollTo({y: -offset, animated: true});
+                } else if (status === STATUS_NONE) {
+                    if (!this.props.loadedAllData()) {
+                        this.setState({status:STATUS_INFINITE_IDLE});
+                    } else {
+                        this.setState({status:STATUS_INFINITE_LOADED_ALL});
+                    }
+                }
+            }
+        } else if (this.isCanScroll && this.scrollY >= this.maxScrollY) {
+            if (offset < 0 && status === STATUS_NONE) {
+                if (!this.props.loadedAllData()) {
+                    this.setState({status:STATUS_INFINITE_IDLE});
+                } else {
+                    this.setState({status:STATUS_INFINITE_LOADED_ALL});
+                }
+            } else if (offset > 0) {
+                this.refs.scrollView.scrollTo({y: this.maxScrollY-offset, animated: true});
+            }
+        }
+
+        if (status===STATUS_REFRESH_IDLE || status===STATUS_WILL_REFRESH) {
+            this.state.translateY.setValue(offset/2);
+            if (offset < this.props.pullDistance) {
+                this.setState({status: STATUS_REFRESH_IDLE});
+            } else if (offset > this.props.pullDistance) {
+                this.setState({status: STATUS_WILL_REFRESH});
+            }
+        } else if (status===STATUS_INFINITE_IDLE || status===STATUS_WILL_INFINITE) {
+            this.state.translateY.setValue(offset/2);
+            if (offset > -this.props.pullDistance-this.props.footerHeight) {
+                this.setState({status: STATUS_INFINITE_IDLE});
+            } else if (offset < -this.props.pullDistance-this.props.footerHeight) {
+                this.setState({status: STATUS_WILL_INFINITE});
+            }
+        }
+    },
+    handlePanResponderEnd(e, gestureState) {
         var status = this.state.status;
+        this.state.translateY.setValue(0);
         if (status === STATUS_REFRESH_IDLE) {
             this.setState({status:STATUS_NONE});
         } else if (status === STATUS_WILL_REFRESH) {
@@ -239,51 +303,45 @@ var RefreshInfiniteListView = React.createClass({
         } else if (status === STATUS_INFINITE_LOADED_ALL) {
             this.setState({status:STATUS_NONE});
         }
+        if(this.scrollY > 0 && this.scrollY < (this.footerIsRender ? this.maxScrollY - this.props.footerHeight : this.maxScrollY)) {
+            this.setState({isScrollEnable: true});
+        }
+    },
+    isScrolledToTop() {
+        if((this.scrollY === 0 || this.scrollY === this.maxScrollY) && this.state.isScrollEnable) {
+            this.setState({isScrollEnable: false});
+        }
     },
     handleScroll(event) {
-        var nativeEvent = event.nativeEvent;
-        var status = this.state.status;
-        if (status===STATUS_REFRESH_IDLE || status===STATUS_WILL_REFRESH) {
-            var y = nativeEvent.contentInset.top + nativeEvent.contentOffset.y
-            if (status!==STATUS_WILL_REFRESH && y<-this.props.pullDistance) {
-                this.setState({status:STATUS_WILL_REFRESH});
-            } else if (status===STATUS_WILL_REFRESH && y>=-this.props.pullDistance) {
-                this.setState({status:STATUS_REFRESH_IDLE});
-            }
-            return;
-        }
-
-        if (status===STATUS_INFINITE_IDLE || status===STATUS_WILL_INFINITE) {
-            var y = nativeEvent.contentInset.top + nativeEvent.contentOffset.y + nativeEvent.layoutMeasurement.height
-            -nativeEvent.contentSize.height-this.initialInfiniteOffset;
-            if (this.footerIsRender) {
-                y += this.props.footerHeight;
-            }
-            if (status!==STATUS_WILL_INFINITE && y>this.props.pullDistance) {
-                this.setState({status:STATUS_WILL_INFINITE});
-            } else if (status===STATUS_WILL_INFINITE && y<=this.props.pullDistance) {
-                this.setState({status:STATUS_INFINITE_IDLE});
-            }
-        }
+        this.scrollY = Math.floor(event.nativeEvent.contentOffset.y);
     },
     render() {
+        const {translateY, isScrollEnable} = this.state;
         this.dataSource = null;
         if (!this.props.dataSource.getRowCount()) {
             var DataSource = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
             this.dataSource = DataSource.cloneWithRows([""]);
-
         }
         return (
-            <ListView
-                {...this.props}
-                dataSource={this.dataSource?this.dataSource:this.props.dataSource}
-                renderRow={this.renderRow}
-                renderHeader={this.renderHeader}
-                renderFooter={this.renderFooter}
-                onResponderGrant={this.handleResponderGrant}
-                onResponderRelease={this.handleResponderRelease}
-                onScroll={this.handleScroll}
-                />
+            <Animated.View style={{flex:1, transform:[{translateY}]}} {...this._panResponder.panHandlers}>
+                {this.renderHeader()}
+                <ListView
+                    {...this.props}
+                    ref='scrollView'
+                    dataSource={this.dataSource?this.dataSource:this.props.dataSource}
+                    renderRow={this.renderRow}
+                    renderFooter={this.renderFooterInner}
+                    scrollEnabled={isScrollEnable}
+                    onLayout={this.onLayout}
+                    onContentSizeChange={this.onContentSizeChange}
+                    onScroll={this.handleScroll}
+                    onTouchEnd= {()=>{this.isScrolledToTop()}}
+                    onScrollEndDrag= {()=>{this.isScrolledToTop()}}
+                    onMomentumScrollEnd = {()=>{this.isScrolledToTop()}}
+                    onResponderRelease ={()=>{this.isScrolledToTop()}}
+                    />
+                {this.renderFooterOutter()}
+            </Animated.View>
         )
     }
 });
@@ -300,5 +358,3 @@ var styles = StyleSheet.create({
         transform:[{rotateX: '180deg'},],
     }
 });
-
-module.exports = RefreshInfiniteListView;
