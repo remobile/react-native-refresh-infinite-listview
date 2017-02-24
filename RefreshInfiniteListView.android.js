@@ -156,6 +156,7 @@ module.exports =  React.createClass({
         };
     },
     getInitialState() {
+        this.scrollFromTop = true;
         this.contentHeight = 0;
         this.height = 0;
         this.scrollY = 0;
@@ -245,16 +246,20 @@ module.exports =  React.createClass({
     handlePanResponderMove(e, gestureState) {
         const offset = gestureState.dy;
         const {status} = this.state;
+        let lastStatus = status;
         if (this.scrollY === 0) {
             if (offset > 0 && status === STATUS_NONE) {
+                lastStatus = STATUS_REFRESH_IDLE;
                 this.setState({status:STATUS_REFRESH_IDLE});
             } else if (offset < 0) {
                 if (this.isCanScroll) {
-                    this.refs.scrollView.scrollTo({y: -offset, animated: true});
+                    this.scrollFromTop = true;
                 } else if (status === STATUS_NONE) {
                     if (!this.props.loadedAllData()) {
+                        lastStatus = STATUS_INFINITE_IDLE;
                         this.setState({status:STATUS_INFINITE_IDLE});
                     } else {
+                        lastStatus = STATUS_INFINITE_LOADED_ALL;
                         this.setState({status:STATUS_INFINITE_LOADED_ALL});
                     }
                 }
@@ -262,11 +267,20 @@ module.exports =  React.createClass({
         } else if (this.isCanScroll && this.scrollY >= this.maxScrollY) {
             if (offset < 0 && status === STATUS_NONE) {
                 if (!this.props.loadedAllData()) {
+                    lastStatus = STATUS_INFINITE_IDLE;
                     this.setState({status:STATUS_INFINITE_IDLE});
                 } else {
+                    lastStatus = STATUS_INFINITE_LOADED_ALL;
                     this.setState({status:STATUS_INFINITE_LOADED_ALL});
                 }
             } else if (offset > 0) {
+                this.scrollFromTop = false;
+            }
+        }
+        if (this.isCanScroll && lastStatus === STATUS_NONE) {
+            if (this.scrollFromTop && offset < 0) {
+                this.refs.scrollView.scrollTo({y: -offset, animated: true});
+            }  else if (!this.scrollFromTop && offset > 0) {
                 this.refs.scrollView.scrollTo({y: this.maxScrollY-offset, animated: true});
             }
         }

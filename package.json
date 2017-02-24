@@ -1,6 +1,6 @@
 {
     "name": "@remobile/react-native-refresh-infinite-listview",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "A awesome pull-down-refresh and pull-up-loadmore listview",
     "main": "index.js",
     "author": {
