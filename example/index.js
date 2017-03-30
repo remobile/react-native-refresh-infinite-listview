@@ -1,105 +1,104 @@
 'use strict';
 
-var React = require('react');
-var ReactNative = require('react-native');
-var {
+const React = require('react');
+const ReactNative = require('react-native');
+const {
     View,
     Text,
     StyleSheet,
-    ListView
+    ListView,
 } = ReactNative;
 
-var TimerMixin = require('react-timer-mixin');
-var RefreshInfiniteListView = require('@remobile/react-native-refresh-infinite-listview');
+const TimerMixin = require('react-timer-mixin');
+const RefreshInfiniteListView = require('@remobile/react-native-refresh-infinite-listview');
 
-var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+const ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
 module.exports = React.createClass({
     mixins: [TimerMixin],
-    data: {index: 0, maxIndex:20, list:[]},
-    getData(init) {
-        var total = 5;
+    data: { index: 0, maxIndex:20, list:[] },
+    getData (init) {
+        let total = 5;
         if (init) {
             this.data.index = 0;
             this.data.list = [];
-            total = Math.floor(Math.random()*5);
+            total = Math.floor(Math.random() * 5);
         }
-        for (var i=0; i<total; i++) {
-            this.data.list[this.data.index] = "Row" + (this.data.index+1);
+        for (let i = 0; i < total; i++) {
+            this.data.list[this.data.index] = 'Row' + (this.data.index + 1);
             this.data.index++;
         }
     },
-    getInitialState() {
+    getInitialState () {
         this.getData(true);
         return {
-            dataSource: ds.cloneWithRows(this.data.list)
-        }
+            dataSource: ds.cloneWithRows(this.data.list),
+        };
     },
-    onRefresh() {
+    onRefresh () {
         this.getData(true);
-        this.setTimeout(()=>{
+        this.setTimeout(() => {
             this.list.hideHeader();
-            this.setState({dataSource: ds.cloneWithRows(this.data.list)});
+            this.setState({ dataSource: ds.cloneWithRows(this.data.list) });
         }, 1000);
     },
-    onInfinite() {
+    onInfinite () {
         this.getData();
-        this.setTimeout(()=>{
+        this.setTimeout(() => {
             this.list.hideFooter();
-            this.setState({dataSource: ds.cloneWithRows(this.data.list)});
+            this.setState({ dataSource: ds.cloneWithRows(this.data.list) });
         }, 1000);
     },
-    loadedAllData() {
-        return this.data.index >= this.data.maxIndex||this.data.index===0;
+    loadedAllData () {
+        return this.data.index >= this.data.maxIndex || this.data.index === 0;
     },
-    renderRow(text) {
+    renderRow (text) {
         return (
             <View style={styles.row}>
                 <Text >
                     {text}
                 </Text>
             </View>
-        )
-    },
-    renderSeparator(sectionID, rowID) {
-        return (
-            <View style={styles.separator} key={sectionID+rowID}/>
         );
     },
-    render() {
+    renderSeparator (sectionID, rowID) {
         return (
-            <View style={{flex:1}}>
-                <View style={{height:20}} />
+            <View style={styles.separator} key={sectionID + rowID} />
+        );
+    },
+    render () {
+        return (
+            <View style={{ flex:1 }}>
+                <View style={{ height:20 }} />
                 <RefreshInfiniteListView
-                    ref = {(list) => {this.list= list}}
+                    ref={(list) => { this.list = list; }}
                     dataSource={this.state.dataSource}
                     renderRow={this.renderRow}
                     renderSeparator={this.renderSeparator}
                     loadedAllData={this.loadedAllData}
                     initialListSize={30}
                     scrollEventThrottle={10}
-                    style={{backgroundColor:'transparent'/*,top:100, left:10, width:200, height:300, position:'absolute'*/}}
-                    onRefresh = {this.onRefresh}
-                    onInfinite = {this.onInfinite}
-                    >
-                </RefreshInfiniteListView>
+                    style={{ backgroundColor:'transparent' }}
+                    onRefresh={this.onRefresh}
+                    onInfinite={this.onInfinite}
+                     />
             </View>
-        )
-    }
+        );
+    },
 });
 
-var styles = StyleSheet.create({
+const styles = StyleSheet.create({
     row: {
         height:60,
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     list: {
-        alignSelf:'stretch'
+        alignSelf:'stretch',
     },
     separator: {
         height: 1,
-        backgroundColor: '#CCC'
+        backgroundColor: '#CCC',
     },
 });
